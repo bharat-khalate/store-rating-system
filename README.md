@@ -59,4 +59,46 @@ docker run --name pg_server -p 5432:5432 -e POSTGRES_PASSWORD=pass -d postgres
 ```bash
    npm i
    npm run dev
-``` 
+```
+
+
+# Project UI Screenshots
+
+This document showcases the user interface of the project.
+
+---
+
+## 1. Login Page
+![Login Page](./screenshots/login.png)
+
+## 1. Sign Up Page
+![Login Page](./screenshots/signup.png)
+
+---
+
+## 2. Admin Dashboard
+![Dashboard](./screenshots/Admindash1.png)
+![Dashboard](./screenshots/Admindash2.png)
+
+
+---
+
+## 3. User Dashboard
+![Settings](./screenshots/Userdash1.png)
+![Settings](./screenshots/Userdash2.png)
+# rating form
+![Settings](./screenshots/Addrating.png)
+
+
+
+---
+
+## 4. Store Dashboard
+![Mobile View](./screenshots/Storedash1.png)
+
+
+---
+
+> **Reset Password:** 
+![Mobile View](./screenshots/Resetpass.png)
+

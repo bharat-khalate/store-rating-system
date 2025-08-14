@@ -22,7 +22,7 @@ function App() {
 
         {/* <AdminDashBoard /> */}
         {/* <UserDashBoard/> */}
-        <StoreDashBoard/>
+        {/* <StoreDashBoard/> */}
       </UserContextProvider>
     </>
   );
