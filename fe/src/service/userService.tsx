@@ -37,5 +37,14 @@ export async function getAllUsers() {
     }
 }
 
-
+export async function updatePassword(data) {
+    try {
+        const res = await api.get("/users/update",data);
+        return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+        console.error(err.message);
+        throw err;
+    }
+}
 

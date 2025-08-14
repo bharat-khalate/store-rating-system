@@ -4,21 +4,25 @@ import { UserContextProvider } from "./context/UserContext";
 import AdminDashBoard from "./pages/AdminDashBoard";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import StoreDashBoard from "./pages/StoreDashboard";
+import UserDashBoard from "./pages/UserDashBoard";
 
 function App() {
   return (
     <>
       <UserContextProvider>
-        <BrowserRouter>
+        {/* <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login />}>
               <Route index element={<Dashboard />} />
             </Route>
           </Routes>
-        </BrowserRouter>
+        </BrowserRouter> */}
         {/* <Login /> */}
 
         {/* <AdminDashBoard /> */}
+        {/* <UserDashBoard/> */}
+        <StoreDashBoard/>
       </UserContextProvider>
     </>
   );

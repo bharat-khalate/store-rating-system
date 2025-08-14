@@ -11,3 +11,15 @@ export default async function getAllRatings(){
         throw err;
     }
 }
+
+
+export  async function getRatingsForUser(storeId, userId){
+    try {
+        const res = await api.get(`/stores/${storeId}/users/${userId}/rating`);
+        return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+        console.error(err.message);
+        throw err;
+    }
+}

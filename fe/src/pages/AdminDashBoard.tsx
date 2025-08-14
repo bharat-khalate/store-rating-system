@@ -97,13 +97,13 @@ export default function AdminDashBoard() {
       try {
         setLoading(true);
         setError('');
-        const users = await getAllUsers(); // API call commented out
-        const stores = await getAllstores();
-        setStoreData(stores);
-        const ratings=await getAllRatings();
-        setRatingData(ratings);
-        // setStoreData(mockStoreData);
-        // setTableData(mockUsers); // Using mock data instead
+        // const users = await getAllUsers(); // API call commented out
+        // const stores = await getAllstores();
+        // setStoreData(stores);
+        // const ratings=await getAllRatings();
+        // setRatingData(ratings);
+        setStoreData(mockStoreData);
+        setTableData(mockUsers); // Using mock data instead
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch users';
         setError(errorMessage);
