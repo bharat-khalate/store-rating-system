@@ -1,7 +1,11 @@
+
+
+
+
 /* eslint-disable react-refresh/only-export-components */
 import {  createContext, useContext, useState, type ReactNode } from "react"
 
-enum Role{
+export enum Role{
     USER="USER",
     SYSTEM_ADMINISTRATOR="SYSTEM_ADMINISTRATOR",
     STORE_OWNER="STORE_OWNER"
@@ -15,10 +19,8 @@ export interface User{
 }
 
 interface UserContextType{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    user:any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setUser:any
+    user: User | null,
+    setUser: (user: User | null) => void
 }
 
 const userContext=createContext<UserContextType|null>(null);

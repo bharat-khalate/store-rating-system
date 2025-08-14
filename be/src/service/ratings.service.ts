@@ -1,5 +1,5 @@
 import prismaClient from "../db/DbConfig";
-import { ratings } from "../../generated/prisma";
+import { ratings, store } from "../../generated/prisma";
 import { promises } from "dns";
 import StoreService from "./store.service";
 
@@ -8,6 +8,7 @@ interface RatingServiceType {
   updateRating: (ratingId: number, rating: number) => Promise<ratings>;
   getRating: (rating: { storeId: number; userId: number }) => Promise<ratings>;
   getAllRating: (storeId: number) => Promise<ratings[]>;
+  getAll:()=>Promise<ratings[]>
 }
 
 async function addRating(rating: Omit<ratings, "ratingId">) {
@@ -100,11 +101,25 @@ async function getAllRating(storeId: number) {
   }
 }
 
+async function getAll() {
+  try {
+    const data: ratings[] = await prismaClient.ratings.findMany();
+    if (!data) {
+      throw new Error("No ratings, Yet");
+    }
+    return data;
+  } catch (err: any) {
+    console.error(err);
+    throw err;
+  }
+}
+
 const RatingService: RatingServiceType = {
   addRating,
   updateRating,
   getRating,
-  getAllRating
+  getAllRating,
+  getAll
 };
 
 export default RatingService;

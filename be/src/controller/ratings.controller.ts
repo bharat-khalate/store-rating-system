@@ -98,3 +98,26 @@ export async function getAllRatings(req: Request, res: Response) {
     res.status(200).json(responseData);
   }
 }
+
+
+export async function getAll(req: Request, res: Response) {
+  try {
+
+
+    const data = await RatingService.getAll();
+    const responseData: GenericSuccessResponse<ratings> = {
+      success: true,
+      message: "Rating fetched",
+      data: data,
+    };
+    res.status(200).json(responseData);
+  } catch (err: any) {
+    console.error(err.message);
+    const responseData: GenericErrorResponse = {
+      success: false,
+      message: "failed to add rating",
+      error: err.message,
+    };
+    res.status(200).json(responseData);
+  }
+}

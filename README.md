@@ -51,3 +51,12 @@ docker run --name pg_server -p 5432:5432 -e POSTGRES_PASSWORD=pass -d postgres
 
 - **Robust Logging**  
   Implement a detailed logging mechanism using libraries like **morgan**, integrated with file-based or cloud logging solutions for better monitoring and debugging.
+
+
+
+## 📦 Frontend Setup Guide Setup Guide
+## 🚀 Steps to Start Backend
+```bash
+   npm i
+   npm run dev
+``` 

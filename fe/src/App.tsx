@@ -1,18 +1,27 @@
-import './App.css'
-import { UserContextProvider } from './context/UserContext'
-import Login from './pages/Login'
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import "./App.css";
+import { UserContextProvider } from "./context/UserContext";
+import AdminDashBoard from "./pages/AdminDashBoard";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
- 
-
   return (
     <>
-    <UserContextProvider>
-      <Login></Login>
-    </UserContextProvider>
-      
+      <UserContextProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />}>
+              <Route index element={<Dashboard />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+        <Login />
+
+        <AdminDashBoard />
+      </UserContextProvider>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
