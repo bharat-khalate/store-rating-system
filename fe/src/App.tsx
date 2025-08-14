@@ -16,9 +16,9 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
-        <Login />
+        {/* <Login /> */}
 
-        <AdminDashBoard />
+        {/* <AdminDashBoard /> */}
       </UserContextProvider>
     </>
   );
