@@ -38,6 +38,11 @@ docker run --name pg_server -p 5432:5432 -e POSTGRES_PASSWORD=pass -d postgres
   npm run dev
 ```
 
+## Note 
+  -You have to crete env with DATABASE_URL and PORT 
+
+
+
 ## Future Improvements
 
 - **Security Enhancement with JWT or OAuth**  
