@@ -12,12 +12,12 @@ export default  function Dashboard() {
     const navigate=useNavigate();
 
     useEffect(()=>{
-        if(!ctx) navigate("/login");
+        if(!ctx) navigate("/");
     },[ctx])
 
     if(ctx?.user?.role===Role.SYSTEM_ADMINISTRATOR) return <AdminDashBoard/>;
     else if(ctx?.user?.role===Role.STORE_OWNER) return <StoreDashBoard/>
     else if(ctx?.user?.role===Role.USER) return <UserDashBoard/>
-    else navigate("/login");
+    else navigate("/");
     
 }
