@@ -11,13 +11,13 @@ function App() {
   return (
     <>
       <UserContextProvider>
-        {/* <BrowserRouter>
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login />}>
               <Route index element={<Dashboard />} />
             </Route>
           </Routes>
-        </BrowserRouter> */}
+        </BrowserRouter>
         {/* <Login /> */}
 
         {/* <AdminDashBoard /> */}

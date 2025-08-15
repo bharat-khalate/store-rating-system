@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useUser, Role } from "../context/UserContext";
-import { register } from "../service/userService";
+import { login, register } from "../service/userService";
 
 interface LoginFormData {
   email: string;
-  address: string;
+  password: string;
 }
 
 interface SignupFormData {
@@ -27,7 +27,7 @@ export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [loginData, setLoginData] = useState<LoginFormData>({
     email: "",
-    address: "",
+    password: "",
   });
   const [signupData, setSignupData] = useState<SignupFormData>({
     email: "",
@@ -72,10 +72,10 @@ export default function Login() {
       newErrors.email = "Please enter a valid email address";
     }
 
-    if (!loginData.address) {
+    if (!loginData.password) {
       newErrors.address = "Address is required";
-    } else if (!validateAddress(loginData.address)) {
-      newErrors.address = "Address must be at least 5 characters long";
+    } else if (!validatePassword(loginData.password)) {
+      newErrors.password = "password must be at least 5 characters long";
     }
 
     setErrors(newErrors);
@@ -119,10 +119,10 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      // Simulate API call
+      
      const user=await login(loginData);
       
-      ctx?.setUser(user);
+      ctx?.setUser(user.data[0]);
     } catch (error) {
       console.error("Login failed:", error);
     } finally {
@@ -141,7 +141,7 @@ export default function Login() {
       
 
       
-      ctx?.setUser(user);
+      ctx?.setUser(user.data[0]);
     } catch (error) {
       console.error("Signup failed:", error);
     } finally {
@@ -235,13 +235,13 @@ export default function Login() {
 
               <div>
                 <label htmlFor="login-address" className="block text-sm font-medium text-gray-700 mb-2">
-                  Address
+                  Password
                 </label>
                 <input
                   id="login-address"
-                  name="address"
+                  name="password"
                   type="text"
-                  value={loginData.address}
+                  value={loginData.passowrd}
                   onChange={(e) => handleInputChange(e, "login")}
                   className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     errors.address ? "border-red-300" : "border-gray-300"

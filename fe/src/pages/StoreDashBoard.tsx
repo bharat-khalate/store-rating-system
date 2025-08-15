@@ -3,7 +3,8 @@ import { useUser } from '../context/UserContext';
 import AdminTable from '../component/AdminTable';
 import { Role } from '../context/UserContext';
 import { getAllstores } from '../service/storeService';
-import { updatePassword } from '../service/userService';
+import { getUserById, updatePassword } from '../service/userService';
+import { getRatingsByStoreID } from '../service/ratingService';
 
 interface StoreData {
   storeId: number | null;
@@ -32,13 +33,7 @@ interface StoreRatingRow {
 }
 
 export default function StoreDashBoard() {
-  const { user } ={user:{
-    userId: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: Role.STORE_OWNER,
-    password:12345678890
-  }} //useUser();
+  const { user } =useUser();
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -103,24 +98,39 @@ export default function StoreDashBoard() {
         setLoading(true);
         setError('');
         
-        // const stores = await getAllstores();
-        setStoreData(mockStoreData);
+        const stores = await getAllstores();
+        console.log(stores.data)
+        setStoreData(stores.data);
+        
+        // setStoreData(mockStoreData);
 
         // Pick the current owner's store if available, else first
-        const current = mockStoreData.find(s => s.owner.userId === user.userId) || mockStoreData[0] || null;
+        // console.log(storeData)
+        // console.log(user)
+        const current = stores.data.find(s => s?.ownerId === user.userId) || mockStoreData[0] || null;
+        // console.log(current)
         setSelectedStore(current);
 
+        const storeRating= await getRatingsByStoreID(current.storeId);
+        const storeRatingWithUser=storeRating.data?.map(async (rating)=>{
+          const user=await getUserById(rating?.storeId);
+          return{
+            ...rating,
+            user:user
+          }
+        })
+        setStoreRatings(storeRatingWithUser);
         // Mock ratings for the selected store
-        if (current) {
-          const mockRatings: StoreRatingRow[] = [
-            { userId: 101, name: 'Alice Johnson', email: 'alice@example.com', rating: 5 },
-            { userId: 102, name: 'Brian Lee', email: 'brian@example.com', rating: 4 },
-            { userId: 103, name: 'Cathy Zhang', email: 'cathy@example.com', rating: 3 },
-            { userId: 104, name: 'David Park', email: 'david@example.com', rating: 5 },
-            { userId: 105, name: 'Elena Rossi', email: 'elena@example.com', rating: 4 }
-          ];
-          setStoreRatings(mockRatings);
-        }
+        // if (current) {
+        //   const mockRatings: StoreRatingRow[] = [
+        //     { userId: 101, name: 'Alice Johnson', email: 'alice@example.com', rating: 5 },
+        //     { userId: 102, name: 'Brian Lee', email: 'brian@example.com', rating: 4 },
+        //     { userId: 103, name: 'Cathy Zhang', email: 'cathy@example.com', rating: 3 },
+        //     { userId: 104, name: 'David Park', email: 'david@example.com', rating: 5 },
+        //     { userId: 105, name: 'Elena Rossi', email: 'elena@example.com', rating: 4 }
+        //   ];
+        //   setStoreRatings(mockRatings);
+        // }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch stores';
         setError(errorMessage);
@@ -277,9 +287,9 @@ export default function StoreDashBoard() {
 
   // Ratings table columns configuration
   const ratingColumns = [
-    { key: 'userId', label: 'User ID' },
-    { key: 'name', label: 'Name' },
-    { key: 'email', label: 'Email' },
+    { key: 'user.userId', label: 'User ID' },
+    { key: 'user.name', label: 'Name' },
+    { key: 'user.email', label: 'Email' },
     { key: 'rating', label: 'Rating', render: (value: number) => renderStars(value) }
   ];
 

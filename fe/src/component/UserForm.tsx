@@ -6,6 +6,7 @@ interface UserFormData {
   email: string;
   password: string;
   role: Role;
+  address: string;
 }
 
 interface UserFormProps {
@@ -19,7 +20,8 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit }) => {
     name: '',
     email: '',
     password: '',
-    role: Role.USER
+    role: Role.USER,
+    address:''
   });
   const [errors, setErrors] = useState<Partial<UserFormData>>({});
 
@@ -46,6 +48,10 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit }) => {
       newErrors.role = 'Role is required';
     }
 
+    if (!formData.address) {
+      newErrors.address = 'address is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -55,7 +61,7 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit }) => {
     
     if (validateForm()) {
       onSubmit(formData);
-      setFormData({ name: '', email: '', password: '', role: Role.USER });
+      setFormData({ name: '', email: '', address:'', password: '', role: Role.USER });
       setErrors({});
       onClose();
     }
@@ -68,6 +74,8 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit }) => {
       // Convert string value to Role enum
       setFormData(prev => ({ ...prev, [name]: value as Role }));
     } else {
+      // console.log(name)
+      // console.log(value)
       setFormData(prev => ({ ...prev, [name]: value }));
     }
     
@@ -132,6 +140,26 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit }) => {
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
+          </div>
+
+           <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+              Address *
+            </label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.name ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter user name"
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
             )}
           </div>
 

@@ -22,17 +22,31 @@ async function createStore(store: {
   user: Omit<user, "userId">;
 }) {
   try {
-    const data = await prismaClient.store.create({
-      data: {
-        storeName: store.storeName,
-        address: store.address,
-        overAllRating: 0,
-        owner: {
-          create: store.user,
+    const res = await prismaClient.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: store.user,
+      });
+      const storeData = await tx.store.create({
+        data: {
+          storeName: store.storeName,
+          address: store.address,
+          overAllRating: 0,
+          ownerId: user.userId,
         },
-      },
+      });
+      return storeData;
     });
-    return data;
+    // const data = await prismaClient.store.create({
+    //   data: {
+    //     storeName: store.storeName,
+    //     address: store.address,
+    //     overAllRating: 0,
+    //     owner: {
+    //       create: store.user,
+    //     },
+    //   },
+    // });
+    return res;
   } catch (err: any) {
     console.error(err.message);
     throw err;

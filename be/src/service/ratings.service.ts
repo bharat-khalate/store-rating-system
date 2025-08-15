@@ -6,7 +6,7 @@ import StoreService from "./store.service";
 interface RatingServiceType {
   addRating: (rating: Omit<ratings, "ratingId">) => Promise<ratings>;
   updateRating: (ratingId: number, rating: number) => Promise<ratings>;
-  getRating: (rating: { storeId: number; userId: number }) => Promise<ratings>;
+  getRating: (rating: { storeId: number; userId: number }) => Promise<ratings|null>;
   getAllRating: (storeId: number) => Promise<ratings[]>;
   getAll:()=>Promise<ratings[]>
 }
@@ -74,9 +74,6 @@ async function getRating(rating: { storeId: number; userId: number }) {
         userId: rating.userId,
       },
     });
-    if (!data) {
-      throw new Error("No ratings, Yet");
-    }
     return data;
   } catch (err: any) {
     console.error(err);

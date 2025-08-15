@@ -4,7 +4,11 @@ import StoreTable from "../component/StoreTable";
 import { Role } from "../context/UserContext";
 import { getAllstores } from "../service/storeService";
 import { updatePassword } from "../service/userService";
-import {getRatingsForUser } from "../service/ratingService"
+import {
+  getRatingsForUser,
+  submitRating,
+  updateRating,
+} from "../service/ratingService";
 
 interface StoreData {
   storeId: number | null;
@@ -17,7 +21,7 @@ interface StoreData {
     email: string;
     role: Role;
   };
-  givenRating: number | null;
+  givenRating: any;
 }
 
 interface PasswordUpdateData {
@@ -31,15 +35,7 @@ interface RatingData {
 }
 
 export default function UserDashBoard() {
-  const { user } = {
-    user: {
-      userId: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: Role.STORE_OWNER,
-      password: 12345678890,
-    },
-  }; //useUser();
+  const { user } = useUser();
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -58,9 +54,10 @@ export default function UserDashBoard() {
     "asc"
   );
   const [isRatingModalOpen, setIsRatingModalOpen] = useState<boolean>(false);
+  const [ratingUpdateModalOpen, setIsRatingUpdateModalOpen] = useState<boolean>(false);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [ratingData, setRatingData] = useState<RatingData>({
-    rating: 5
+    rating: 5,
   });
   const [ratingErrors, setRatingErrors] = useState<Partial<RatingData>>({});
   const [ratingUpdateCounter, setRatingUpdateCounter] = useState<number>(0);
@@ -78,7 +75,7 @@ export default function UserDashBoard() {
         email: "john@example.com",
         role: Role.STORE_OWNER,
       },
-      givenRating:null
+      givenRating: null,
     },
     {
       storeId: 2,
@@ -91,7 +88,7 @@ export default function UserDashBoard() {
         email: "jane@example.com",
         role: Role.STORE_OWNER,
       },
-      givenRating:null
+      givenRating: null,
     },
     {
       storeId: 3,
@@ -104,7 +101,7 @@ export default function UserDashBoard() {
         email: "bob@example.com",
         role: Role.STORE_OWNER,
       },
-      givenRating:null
+      givenRating: null,
     },
   ];
 
@@ -115,22 +112,29 @@ export default function UserDashBoard() {
         setLoading(true);
         setError("");
 
-        // const stores = await getAllstores();
-        // const ratings=storeSortColumn?.map(async (st)=>{
-        //     try{
-        //         const abc=await getRatingsForUser(user.userId,st.storeId)
-        //     return {
-        //         ...st,
-        //         givenRating:abc
-        //     }
-        //     }catch{
-        //         return {
-        //             ...st,
-        //             givenRating:null
-        //         }
-        //     }
-        // })
-        setStoreData(mockStoreData);
+        const stores = await getAllstores();
+        // console.log(stores)
+        const ratings = await Promise.all(
+          stores.data?.map(async (st) => {
+            try {
+              const abc = await getRatingsForUser(user.userId, st.storeId);
+              console.log(abc)
+              return {
+                ...st,
+                givenRating: abc.data[0].rating,
+              };
+            } catch {
+              return {
+                ...st,
+                givenRating: null,
+              };
+            }
+          }) ?? []
+        );
+
+        console.log(ratings);
+
+        setStoreData(ratings);
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to fetch stores";
@@ -248,32 +252,61 @@ export default function UserDashBoard() {
   };
 
   // Handle rating modal open
-  const handleRatingModalOpen = (store: StoreData, isUpdate: boolean = false) => {
+  const handleRatingModalOpen = (
+    store: StoreData,
+    isUpdate: boolean = false
+  ) => {
     setSelectedStore(store);
     if (isUpdate && store.givenRating) {
       setRatingData({
-        rating: store.givenRating
+        rating: store.givenRating,
       });
     } else {
       setRatingData({
-        rating: 5
+        rating: 5,
       });
     }
     setIsRatingModalOpen(true);
   };
 
-  // Handle rating form changes
-  const handleRatingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === 'rating') {
-      setRatingData(prev => ({ ...prev, [name]: parseInt(value) }));
+  const handleRatingUpdateModalOpen = (
+    store: StoreData,
+    isUpdate: boolean = false
+  ) => {
+    setSelectedStore(store);
+    if (isUpdate && store.givenRating) {
+      setRatingData({
+        rating: store.givenRating,
+      });
     } else {
-      setRatingData(prev => ({ ...prev, [name]: value }));
+      setRatingData({
+        rating: 5,
+      });
     }
-    
+    setIsRatingUpdateModalOpen(true);
+  };
+
+  // Handle rating form changes
+  const handleRatingChange = async (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    const response = await updateRating({
+      ratingId: selectedStore?.givenRating?.ratingId,
+      rating: ratingData.rating,
+    });
+
+    if (name === "rating") {
+      setRatingData((prev) => ({ ...prev, [name]: parseInt(value) }));
+    } else {
+      setRatingData((prev) => ({ ...prev, [name]: value }));
+    }
+
     // Clear error when user starts typing
     if (ratingErrors[name as keyof RatingData]) {
-      setRatingErrors(prev => ({ ...prev, [name]: undefined }));
+      setRatingErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
@@ -282,7 +315,7 @@ export default function UserDashBoard() {
     const newErrors: Partial<RatingData> = {};
 
     if (ratingData.rating < 1 || ratingData.rating > 5) {
-      newErrors.rating = 'Rating must be between 1 and 5';
+      newErrors.rating = "Rating must be between 1 and 5";
     }
 
     setRatingErrors(newErrors);
@@ -292,31 +325,29 @@ export default function UserDashBoard() {
   // Handle rating submission
   const handleRatingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateRatingForm() && selectedStore) {
       try {
-        // TODO: Replace with actual API call
-        // const response = await submitRating({
-        //   userId: user.userId,
-        //   storeId: selectedStore.storeId,
-        //   rating: ratingData.rating,
-        //   comment: ratingData.comment
-        // });
-        
-        console.log('Rating submitted:', {
+        const response = await submitRating({
           userId: user.userId,
           storeId: selectedStore.storeId,
-          rating: ratingData.rating
+          rating: ratingData.rating,
+        });
+
+        console.log("Rating submitted:", {
+          userId: user.userId,
+          storeId: selectedStore.storeId,
+          rating: ratingData.rating,
         });
 
         // Update local state
-        setStoreData(prev => {
-          const updatedData = prev.map(store => 
-            store.storeId === selectedStore.storeId 
+        setStoreData((prev) => {
+          const updatedData = prev.map((store) =>
+            store.storeId === selectedStore.storeId
               ? { ...store, givenRating: ratingData.rating }
               : store
           );
-          console.log('Updated store data:', updatedData);
+          console.log("Updated store data:", updatedData);
           return updatedData;
         });
 
@@ -325,14 +356,14 @@ export default function UserDashBoard() {
         setRatingErrors({});
         setIsRatingModalOpen(false);
         setSelectedStore(null);
-        
-        // Force re-render of the table
-        setRatingUpdateCounter(prev => prev + 1);
 
-        alert('Rating submitted successfully!');
+        // Force re-render of the table
+        setRatingUpdateCounter((prev) => prev + 1);
+
+        alert("Rating submitted successfully!");
       } catch (err) {
-        console.error('Error submitting rating:', err);
-        alert('Failed to submit rating. Please try again.');
+        console.error("Error submitting rating:", err);
+        alert("Failed to submit rating. Please try again.");
       }
     }
   };
@@ -342,7 +373,7 @@ export default function UserDashBoard() {
     { key: "storeId", label: "Store ID" },
     { key: "storeName", label: "Store Name" },
     { key: "address", label: "Address" },
-    { key: "overallRating", label: "Rating" },
+    { key: "overAllRating", label: "Rating" },
     {
       key: "owner",
       label: "Owner",
@@ -354,31 +385,31 @@ export default function UserDashBoard() {
       ),
     },
     {
-        key: "givenRating",
-        label: "Your Rating",
-        render: (value: number | null, row: StoreData) => (
-          <div>
-            <div className="font-medium mb-2">
-              {value ? `Rating: ${value}/5` : "No rating yet"}
-            </div>
-            {value ? (
-              <button
-                onClick={() => handleRatingModalOpen(row, true)}
-                className="px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors"
-              >
-                Update Rating
-              </button>
-            ) : (
-              <button
-                onClick={() => handleRatingModalOpen(row, false)}
-                className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-              >
-                Add Rating
-              </button>
-            )}
+      key: "givenRating",
+      label: "Your Rating",
+      render: (value: number | null, row: StoreData) => (
+        <div>
+          <div className="font-medium mb-2">
+            {value ? `Rating: ${value}/5` : "No rating yet"}
           </div>
-        ),
-      },
+          {value ? (
+            <button
+              onClick={() => handleRatingModalOpen(row, true)}
+              className="px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors"
+            >
+              Update Rating
+            </button>
+          ) : (
+            <button
+              onClick={() => handleRatingUpdateModalOpen(row, true)}
+              className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+            >
+              Add Rating
+            </button>
+          )}
+        </div>
+      ),
+    },
   ];
 
   if (!user) {
@@ -460,8 +491,6 @@ export default function UserDashBoard() {
                 </div>
               </div>
             </div>
-
-           
           </div>
         </div>
       </div>
@@ -644,30 +673,44 @@ export default function UserDashBoard() {
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-800">
-                {selectedStore.givenRating ? 'Update Rating' : 'Add Rating'} - {selectedStore.storeName}
+                {selectedStore.givenRating ? "Update Rating" : "Add Rating"} -{" "}
+                {selectedStore.storeName}
               </h2>
               <button
                 onClick={() => setIsRatingModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
             <form onSubmit={handleRatingSubmit} className="space-y-4">
               <div>
-                <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="rating"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Rating *
                 </label>
                 <select
                   id="rating"
                   name="rating"
                   value={ratingData.rating}
-                  onChange={handleRatingChange}
+                  onChange={(e) => setRatingData((prev) => ({ ...prev, rating: Number(e.target.value) }))}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    ratingErrors.rating ? 'border-red-500' : 'border-gray-300'
+                    ratingErrors.rating ? "border-red-500" : "border-gray-300"
                   }`}
                 >
                   <option value={1}>1 - Poor</option>
@@ -677,11 +720,11 @@ export default function UserDashBoard() {
                   <option value={5}>5 - Excellent</option>
                 </select>
                 {ratingErrors.rating && (
-                  <p className="text-red-500 text-sm mt-1">{ratingErrors.rating}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {ratingErrors.rating}
+                  </p>
                 )}
               </div>
-
-
 
               <div className="flex space-x-3 pt-4">
                 <button
@@ -695,7 +738,89 @@ export default function UserDashBoard() {
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  {selectedStore.givenRating ? 'Update Rating' : 'Submit Rating'}
+                  {selectedStore.givenRating
+                    ? "Update Rating"
+                    : "Submit Rating"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {ratingUpdateModalOpen && selectedStore && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-800">
+                {selectedStore.givenRating ? "Update Rating" : "Add Rating"} -{" "}
+                {selectedStore.storeName}
+              </h2>
+              <button
+                onClick={() => setIsRatingUpdateModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleRatingChange} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="rating"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Rating *
+                </label>
+                <select
+                  id="rating"
+                  name="rating"
+                  value={ratingData.rating}
+                  onChange={(e) => setRatingData((prev) => ({ ...prev, rating: Number(e.target.value) }))}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    ratingErrors.rating ? "border-red-500" : "border-gray-300"
+                  }`}
+                >
+                  <option value={1}>1 - Poor</option>
+                  <option value={2}>2 - Fair</option>
+                  <option value={3}>3 - Good</option>
+                  <option value={4}>4 - Very Good</option>
+                  <option value={5}>5 - Excellent</option>
+                </select>
+                {ratingErrors.rating && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {ratingErrors.rating}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsRatingModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  {selectedStore.givenRating
+                    ? "Update Rating"
+                    : "Submit Rating"}
                 </button>
               </div>
             </form>

@@ -56,6 +56,28 @@ export async function authenticateUser(req: Request, res: Response) {
   }
 }
 
+export async function getUserByUserId(req: Request, res: Response) {
+  const {userId} =req.params;
+  try {
+    const data: user = await UserService.getUserByUserID(Number(userId));
+    const sanitizedUser = sanitizeUser(data);
+    const responseData: GenericSuccessResponse<Omit<user, "password">> = {
+      success: true,
+      message: "User Fetched",
+      data: [sanitizedUser],
+    };
+    res.status(200).json(responseData);
+  } catch (err: any) {
+    console.error(err.message);
+    const responseMessage: GenericErrorResponse = {
+      success: false,
+      message: "Failed to fetch User",
+      error: err.message,
+    };
+    res.status(400).json(responseMessage);
+  }
+}
+
 export async function getAllUsers(req: Request, res: Response) {
   try {
     const data: user[] = await UserService.getAllUsers();

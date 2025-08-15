@@ -26,3 +26,4 @@ const AdminCard: React.FC<AdminCardProps> = ({ title, value, icon, color = "bg-b
 };
 
 export default AdminCard;
+

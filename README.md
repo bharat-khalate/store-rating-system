@@ -107,3 +107,16 @@ This document showcases the user interface of the project.
 > **Reset Password:** 
 ![Mobile View](./screenshots/Resetpass.png)
 
+
+
+## Future Improvements
+
+- **Security — Proper Toasting Mechanism**  
+  Implement a custom alert/toast system to improve the UI and provide clear, user-friendly messages.
+
+- **Zod Validation**  
+  Enhance input constraints and error handling using the Zod resolver for better form validation.
+
+- **Persisting User State in Session Storage**  
+  Sync application context with session storage to retain user state across page reloads.
+

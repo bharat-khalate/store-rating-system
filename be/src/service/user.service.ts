@@ -17,6 +17,7 @@ interface UserServiceType {
     oldPassword: string;
     newPassword: string;
   }) => Promise<user>;
+  getUserByUserID: (userId: number) => Promise<user>;
 }
 
 const saveUser = async (user: Omit<user, "userId">): Promise<user> => {
@@ -27,7 +28,6 @@ const saveUser = async (user: Omit<user, "userId">): Promise<user> => {
       },
     });
     if (userInDb) throw new Error(USER_ALREADY_EXIST);
-
     const data: user = await prismaClient.user.create({
       data: user,
     });
@@ -52,6 +52,22 @@ const validateUser = async (user: {
 
     if (userInDb.password === user.password) return userInDb;
     throw new Error(INVALID_PASSWORD);
+  } catch (err: any) {
+    console.error(err.message);
+    throw err;
+  }
+};
+
+const getUserByUserID = async (userId:number): Promise<user> => {
+  try {
+    const userInDb = await prismaClient.user.findUnique({
+      where: {
+        userId: userId,
+      },
+    });
+    if (!userInDb) throw new Error(USER_DOESNOT_EXIST);
+
+    return userInDb;
   } catch (err: any) {
     console.error(err.message);
     throw err;
@@ -133,6 +149,7 @@ const UserService: UserServiceType = {
   getAllStoreUsers,
   getAllSystemUsers,
   updatePassword,
+  getUserByUserID
 };
 
 export default UserService;

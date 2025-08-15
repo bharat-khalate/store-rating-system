@@ -1,113 +1,257 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import AdminCard from '../component/AdminCard';
-import AdminTable from '../component/AdminTable';
-import StoreTable from '../component/StoreTable';
-import UserForm from '../component/UserForm';
-import StoreForm from '../component/StoreForm';
-import { addStores } from '../service/storeService';
-import { register } from '../service/userService';
-import { Role } from '../context/UserContext';
+import React, { useState, useMemo, useEffect } from "react";
+import AdminCard from "../component/AdminCard";
+import AdminTable from "../component/AdminTable";
+import StoreTable from "../component/StoreTable";
+import UserForm from "../component/UserForm";
+// import StoreForm from "../component/StoreForm";
+import { addStores, getAllstores } from "../service/storeService";
+import { getAllUsers, register } from "../service/userService";
+import { Role } from "../context/UserContext";
+import getAllRatings from "../service/ratingService";
 // import { getAllstores } from '../service/storeService'; // Commented out for development
 // import getAllRatings from '../service/ratingService'; // Commented out for development
 // import { getAllUsers } from '../service/userService'; // Commented out for development
 
 export default function AdminDashBoard() {
-  const [selectedRole, setSelectedRole] = useState<string | Role>('all');
-  const [userSortColumn, setUserSortColumn] = useState<string>('');
-  const [userSortDirection, setUserSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [storeSortColumn, setStoreSortColumn] = useState<string>('');
-  const [storeSortDirection, setStoreSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [tableData, setTableData] = useState<Array<{
-    userId: number | null;
-    name: string;
-    email: string;
-    role: Role;
-  }>>([]);
-  const [storeData, setStoreData] = useState<Array<{
-    storeId: number | null;
-    storeName: string;
-    address: string;
-    overallRating: number;
-    owner: {
+  const [selectedRole, setSelectedRole] = useState<string | Role>("all");
+  const [userSortColumn, setUserSortColumn] = useState<string>("");
+  const [userSortDirection, setUserSortDirection] = useState<"asc" | "desc">(
+    "asc"
+  );
+  const [storeSortColumn, setStoreSortColumn] = useState<string>("");
+  const [storeSortDirection, setStoreSortDirection] = useState<"asc" | "desc">(
+    "asc"
+  );
+  const [tableData, setTableData] = useState<
+    Array<{
       userId: number | null;
       name: string;
       email: string;
       role: Role;
-    };
-  }>>([]);
-  const [ratingData] = useState<Array<{ id: number; rating: number; comment: string }>>([]);
+    }>
+  >([]);
+  const [storeData, setStoreData] = useState<
+    Array<{
+      storeId: number | null;
+      storeName: string;
+      address: string;
+      overallRating: number;
+      owner: {
+        userId: number | null;
+        name: string;
+        email: string;
+        role: Role;
+      };
+    }>
+  >([]);
+  const [ratingData, setRatingData] = useState<
+    Array<{ id: number; rating: number; comment: string }>
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [isUserFormOpen, setIsUserFormOpen] = useState<boolean>(false);
   const [isStoreFormOpen, setIsStoreFormOpen] = useState<boolean>(false);
 
   // Table columns configuration for users
   const tableColumns = [
-    { key: 'userId', label: 'ID' },
-    { key: 'name', label: 'Name' },
-    { key: 'email', label: 'Email' },
-    { key: 'role', label: 'Role' }
+    { key: "userId", label: "ID" },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "role", label: "Role" },
   ];
 
   // Table columns configuration for stores
   const storeColumns = [
-    { key: 'storeId', label: 'Store ID' },
-    { key: 'storeName', label: 'Store Name' },
-    { key: 'address', label: 'Address' },
-    { key: 'overallRating', label: 'Rating' },
-    { 
-      key: 'owner', 
-      label: 'Owner',
+    { key: "storeId", label: "Store ID" },
+    { key: "storeName", label: "Store Name" },
+    { key: "address", label: "Address" },
+    { key: "overallRating", label: "Rating" },
+    {
+      key: "owner",
+      label: "Owner",
       render: (value: { name: string; email: string }) => (
         <div>
           <div className="font-medium">{value.name}</div>
           <div className="text-sm text-gray-500">{value.email}</div>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   // Mock data for development
   const mockUsers = [
-    { userId: 1, name: 'John Doe', email: 'john@example.com', role: Role.SYSTEM_ADMINISTRATOR },
-    { userId: 2, name: 'Jane Smith', email: 'jane@example.com', role: Role.USER},
-    { userId: 3, name: 'Bob Johnson', email: 'bob@example.com', role: Role.STORE_OWNER},
-    { userId: 4, name: 'Alice Brown', email: 'alice@example.com', role: Role.USER},
-    { userId: 5, name: 'Charlie Wilson', email: 'charlie@example.com', role: Role.SYSTEM_ADMINISTRATOR},
-    { userId: 6, name: 'Diana Davis', email: 'diana@example.com', role: Role.USER },
-    { userId: 7, name: 'Edward Miller', email: 'edward@example.com', role: Role.STORE_OWNER },
-    { userId: 8, name: 'Fiona Garcia', email: 'fiona@example.com', role: Role.USER },
+    {
+      userId: 1,
+      name: "John Doe",
+      email: "john@example.com",
+      role: Role.SYSTEM_ADMINISTRATOR,
+    },
+    {
+      userId: 2,
+      name: "Jane Smith",
+      email: "jane@example.com",
+      role: Role.USER,
+    },
+    {
+      userId: 3,
+      name: "Bob Johnson",
+      email: "bob@example.com",
+      role: Role.STORE_OWNER,
+    },
+    {
+      userId: 4,
+      name: "Alice Brown",
+      email: "alice@example.com",
+      role: Role.USER,
+    },
+    {
+      userId: 5,
+      name: "Charlie Wilson",
+      email: "charlie@example.com",
+      role: Role.SYSTEM_ADMINISTRATOR,
+    },
+    {
+      userId: 6,
+      name: "Diana Davis",
+      email: "diana@example.com",
+      role: Role.USER,
+    },
+    {
+      userId: 7,
+      name: "Edward Miller",
+      email: "edward@example.com",
+      role: Role.STORE_OWNER,
+    },
+    {
+      userId: 8,
+      name: "Fiona Garcia",
+      email: "fiona@example.com",
+      role: Role.USER,
+    },
   ];
 
-
-  const mockStoreData=[
-    {storeId:1, storeName:"Store 1", address:"123 Main St",overallRating:4.5, owner:{ userId: 1, name: 'John Doe', email: 'john@example.com', role: Role.SYSTEM_ADMINISTRATOR }},
-    {storeId:2, storeName:"Store 2", address:"456 Main St",overallRating:4.5, owner:{ userId: 2, name: 'Jane Smith', email: 'jane@example.com', role: Role.USER }},
-    {storeId:3, storeName:"Store 3", address:"789 Main St",overallRating:4.5, owner:{ userId: 3, name: 'Bob Johnson', email: 'bob@example.com', role: Role.STORE_OWNER }},
-    {storeId:4, storeName:"Store 4", address:"101 Main St",overallRating:4.5, owner:{ userId: 4, name: 'Alice Brown', email: 'alice@example.com', role: Role.USER }},
-    {storeId:5, storeName:"Store 5", address:"111 Main St",overallRating:4.5, owner:{ userId: 5, name: 'Charlie Wilson', email: 'charlie@example.com', role: Role.SYSTEM_ADMINISTRATOR }},
-    {storeId:6, storeName:"Store 6", address:"121 Main St",overallRating:4.5, owner:{ userId: 6, name: 'Diana Davis', email: 'diana@example.com', role: Role.USER }},
-    {storeId:7, storeName:"Store 7", address:"131 Main St",overallRating:4.5, owner:{ userId: 7, name: 'Edward Miller', email: 'edward@example.com', role: Role.STORE_OWNER }},
-    {storeId:8, storeName:"Store 8", address:"141 Main St",overallRating:4.5, owner:{ userId: 8, name: 'Fiona Garcia', email: 'fiona@example.com', role: Role.USER }},
-  ]
+  const mockStoreData = [
+    {
+      storeId: 1,
+      storeName: "Store 1",
+      address: "123 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 1,
+        name: "John Doe",
+        email: "john@example.com",
+        role: Role.SYSTEM_ADMINISTRATOR,
+      },
+    },
+    {
+      storeId: 2,
+      storeName: "Store 2",
+      address: "456 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 2,
+        name: "Jane Smith",
+        email: "jane@example.com",
+        role: Role.USER,
+      },
+    },
+    {
+      storeId: 3,
+      storeName: "Store 3",
+      address: "789 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 3,
+        name: "Bob Johnson",
+        email: "bob@example.com",
+        role: Role.STORE_OWNER,
+      },
+    },
+    {
+      storeId: 4,
+      storeName: "Store 4",
+      address: "101 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 4,
+        name: "Alice Brown",
+        email: "alice@example.com",
+        role: Role.USER,
+      },
+    },
+    {
+      storeId: 5,
+      storeName: "Store 5",
+      address: "111 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 5,
+        name: "Charlie Wilson",
+        email: "charlie@example.com",
+        role: Role.SYSTEM_ADMINISTRATOR,
+      },
+    },
+    {
+      storeId: 6,
+      storeName: "Store 6",
+      address: "121 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 6,
+        name: "Diana Davis",
+        email: "diana@example.com",
+        role: Role.USER,
+      },
+    },
+    {
+      storeId: 7,
+      storeName: "Store 7",
+      address: "131 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 7,
+        name: "Edward Miller",
+        email: "edward@example.com",
+        role: Role.STORE_OWNER,
+      },
+    },
+    {
+      storeId: 8,
+      storeName: "Store 8",
+      address: "141 Main St",
+      overallRating: 4.5,
+      owner: {
+        userId: 8,
+        name: "Fiona Garcia",
+        email: "fiona@example.com",
+        role: Role.USER,
+      },
+    },
+  ];
 
   // Fetch users from API (commented out for development)
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        setError('');
-        // const users = await getAllUsers(); // API call commented out
-        // const stores = await getAllstores();
-        // setStoreData(stores);
-        // const ratings=await getAllRatings();
-        // setRatingData(ratings);
-        setStoreData(mockStoreData);
-        setTableData(mockUsers); // Using mock data instead
+        setError("");
+        const users = await getAllUsers(); // API call commented out
+        const stores = await getAllstores();
+        setStoreData(stores.data);
+        const ratings = await getAllRatings();
+        setRatingData(ratings.data);
+        setTableData(users.data);
+        // console.log(stores.data)
+        // console.log(users.data)
+        // console.log(ratings.data)
+        // console.log("hii")
+        // setStoreData(mockStoreData);
+        // setTableData(mockUsers); // Using mock data instead
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch users';
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch users";
         setError(errorMessage);
-        console.error('Error fetching users:', err);
+        console.error("Error fetching users:", err);
       } finally {
         setLoading(false);
       }
@@ -118,115 +262,143 @@ export default function AdminDashBoard() {
 
   // Get unique roles for filter options
   const uniqueRoles = useMemo(() => {
-    const roles = [...new Set(tableData.map(item => item.role))];
+    const roles = [...new Set(tableData.map((item) => item.role))];
     return roles;
   }, [tableData]);
 
-    // Handle user sorting
+  // Handle user sorting
   const handleUserSort = (column: string) => {
     if (userSortColumn === column) {
-      setUserSortDirection(userSortDirection === 'asc' ? 'desc' : 'asc');
+      setUserSortDirection(userSortDirection === "asc" ? "desc" : "asc");
     } else {
       setUserSortColumn(column);
-      setUserSortDirection('asc');
+      setUserSortDirection("asc");
     }
   };
 
   // Handle store sorting
   const handleStoreSort = (column: string) => {
     if (storeSortColumn === column) {
-      setStoreSortDirection(storeSortDirection === 'asc' ? 'desc' : 'asc');
+      setStoreSortDirection(storeSortDirection === "asc" ? "desc" : "asc");
     } else {
       setStoreSortColumn(column);
-      setStoreSortDirection('asc');
+      setStoreSortDirection("asc");
     }
   };
 
   // Sort and filter user data
   const processedUserData = useMemo(() => {
     let data = tableData;
-    
+
     // Apply role filter
-    if (selectedRole !== 'all') {
-      data = data.filter(item => item.role === selectedRole);
+    if (selectedRole !== "all") {
+      data = data.filter((item) => item.role === selectedRole);
     }
-    
+
     // Apply sorting
     if (userSortColumn) {
       data = [...data].sort((a, b) => {
         const aValue = a[userSortColumn as keyof typeof a];
         const bValue = b[userSortColumn as keyof typeof b];
-        
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return userSortDirection === 'asc' 
+
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          return userSortDirection === "asc"
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
-        
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return userSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return userSortDirection === "asc"
+            ? aValue - bValue
+            : bValue - aValue;
         }
-        
+
         return 0;
       });
     }
-    
+
     return data;
   }, [tableData, selectedRole, userSortColumn, userSortDirection]);
 
   // Sort store data
   const processedStoreData = useMemo(() => {
     let data = storeData;
-    
+
     // Apply sorting
     if (storeSortColumn) {
       data = [...data].sort((a, b) => {
         const aValue = a[storeSortColumn as keyof typeof a];
         const bValue = b[storeSortColumn as keyof typeof b];
-        
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return storeSortDirection === 'asc' 
+
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          return storeSortDirection === "asc"
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
-        
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return storeSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return storeSortDirection === "asc"
+            ? aValue - bValue
+            : bValue - aValue;
         }
-        
+
         return 0;
       });
     }
-    
+
     return data;
   }, [storeData, storeSortColumn, storeSortDirection]);
 
-// Handle form submissions
-const handleAddUser = async (userData: { name: string; email: string; password: string; role: Role }) => {
-  const newUser = {
-    userId: null, // ID will be generated by backend
-    ...userData
-  };
-  const data = await register(newUser);
-  setTableData(prev => [...prev, data]);
-  console.log('New user data to send to API:', newUser);
-};
-
-const handleAddStore = async (storeData: { storeName: string; address: string; owner: { name: string; email: string; password: string; role: Role } }) => {
-  const newStore = {
-    storeId: null, // ID will be generated by backend
-    storeName: storeData.storeName,
-    address: storeData.address,
-    overallRating: 0,
-    owner: {
-      userId: null, // ID will be generated by backend
-      ...storeData.owner
+  // Handle form submissions
+  const handleAddUser = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+  }) => {
+    try {
+      const newUser = {
+        ...userData,
+      };
+      const data = await register(newUser);
+      console.log(data);
+      setTableData((prev) => [...prev, data.data[0]]);
+      console.log("New user data to send to API:", newUser);
+    } catch (err: any) {
+      console.error(err.message);
+      window.alert(err.message);
     }
   };
-  const data = await addStores(newStore);
-  setStoreData(prev => [...prev, data]);
-  console.log('New store data to send to API:', newStore);
-};
+
+  const handleAddStore = async (storeData: {
+    storeName: string;
+    address: string;
+    owner: { name: string; email: string; password: string; role: Role };
+  }) => {
+    try {
+      const newStore = {
+        storeName: storeData.storeName,
+        address: storeData.address,
+        overallRating: 0,
+        user: {
+          ...storeData.owner,
+          role: Role.STORE_OWNER,
+          address: storeData.address,
+        },
+      };
+      const data = await addStores(newStore);
+      const users = await getAllUsers(); // API call commented out
+      const stores = await getAllstores();
+      setStoreData(stores.data);
+      const ratings = await getAllRatings();
+      setRatingData(ratings.data);
+      setTableData(users.data);
+      console.log("New store data to send to API:", newStore);
+    } catch (err: any) {
+      console.error(err.message);
+      window.alert(err.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -263,7 +435,10 @@ const handleAddStore = async (storeData: { storeName: string; address: string; o
             >
               Add New User
             </button>
-            <label htmlFor="role-filter" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="role-filter"
+              className="text-sm font-medium text-gray-700"
+            >
               Filter by Role:
             </label>
             <select
@@ -276,9 +451,13 @@ const handleAddStore = async (storeData: { storeName: string; address: string; o
               <option value="all">All Roles</option>
               {uniqueRoles.map((role) => (
                 <option key={role} value={role}>
-                  {role === Role.USER ? 'User' : 
-                   role === Role.SYSTEM_ADMINISTRATOR ? 'System Administrator' : 
-                   role === Role.STORE_OWNER ? 'Store Owner' : role}
+                  {role === Role.USER
+                    ? "User"
+                    : role === Role.SYSTEM_ADMINISTRATOR
+                    ? "System Administrator"
+                    : role === Role.STORE_OWNER
+                    ? "Store Owner"
+                    : role}
                 </option>
               ))}
             </select>
@@ -297,8 +476,8 @@ const handleAddStore = async (storeData: { storeName: string; address: string; o
         {error && !loading && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-600 font-medium">Error: {error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
             >
               Retry
@@ -317,11 +496,13 @@ const handleAddStore = async (storeData: { storeName: string; address: string; o
               sortDirection={userSortDirection}
               onSort={handleUserSort}
             />
-            
+
             {/* Store Table */}
             <div className="mt-8">
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800">Store Management</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Store Management
+                </h2>
                 <button
                   onClick={() => setIsStoreFormOpen(true)}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
