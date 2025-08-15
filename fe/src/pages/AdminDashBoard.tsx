@@ -6,8 +6,9 @@ import UserForm from "../component/UserForm";
 // import StoreForm from "../component/StoreForm";
 import { addStores, getAllstores } from "../service/storeService";
 import { getAllUsers, register } from "../service/userService";
-import { Role } from "../context/UserContext";
+import { Role, useUser } from "../context/UserContext";
 import getAllRatings from "../service/ratingService";
+import { useNavigate } from "react-router-dom";
 // import { getAllstores } from '../service/storeService'; // Commented out for development
 // import getAllRatings from '../service/ratingService'; // Commented out for development
 // import { getAllUsers } from '../service/userService'; // Commented out for development
@@ -51,6 +52,8 @@ export default function AdminDashBoard() {
   const [error, setError] = useState<string>("");
   const [isUserFormOpen, setIsUserFormOpen] = useState<boolean>(false);
   const [isStoreFormOpen, setIsStoreFormOpen] = useState<boolean>(false);
+   const { user, setUser } = useUser();
+  const navigate = useNavigate();
 
   // Table columns configuration for users
   const tableColumns = [
@@ -65,7 +68,7 @@ export default function AdminDashBoard() {
     { key: "storeId", label: "Store ID" },
     { key: "storeName", label: "Store Name" },
     { key: "address", label: "Address" },
-    { key: "overallRating", label: "Rating" },
+    { key: "overAllRating", label: "Rating" },
     {
       key: "owner",
       label: "Owner",
@@ -421,7 +424,17 @@ export default function AdminDashBoard() {
             color="bg-purple-500"
           />
         </div>
+        <button
+        onClick={() => {
+          setUser(null);
+          navigate("/");
+        }}
+        className="px-4 py-2 bg-red-500 h-10 ms-36 text-white rounded-md hover:bg-red-700 transition-colors"
+      >
+        Log Out
+      </button>
       </div>
+      
 
       {/* Table Section */}
       <div className="max-w-7xl mx-auto">
@@ -531,11 +544,11 @@ export default function AdminDashBoard() {
       />
 
       {/* Store Form Modal */}
-      <StoreForm
+      {/* <StoreForm
         isOpen={isStoreFormOpen}
         onClose={() => setIsStoreFormOpen(false)}
         onSubmit={handleAddStore}
-      />
+      /> */}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   submitRating,
   updateRating,
 } from "../service/ratingService";
+import { useNavigate } from "react-router-dom";
 
 interface StoreData {
   storeId: number | null;
@@ -35,7 +36,8 @@ interface RatingData {
 }
 
 export default function UserDashBoard() {
-  const { user } = useUser();
+   const { user, setUser } = useUser();
+  const navigate = useNavigate();
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -54,7 +56,8 @@ export default function UserDashBoard() {
     "asc"
   );
   const [isRatingModalOpen, setIsRatingModalOpen] = useState<boolean>(false);
-  const [ratingUpdateModalOpen, setIsRatingUpdateModalOpen] = useState<boolean>(false);
+  const [ratingUpdateModalOpen, setIsRatingUpdateModalOpen] =
+    useState<boolean>(false);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [ratingData, setRatingData] = useState<RatingData>({
     rating: 5,
@@ -107,46 +110,46 @@ export default function UserDashBoard() {
 
   // Fetch stores data
   useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const stores = await getAllstores();
-        // console.log(stores)
-        const ratings = await Promise.all(
-          stores.data?.map(async (st) => {
-            try {
-              const abc = await getRatingsForUser(user.userId, st.storeId);
-              console.log(abc)
-              return {
-                ...st,
-                givenRating: abc.data[0].rating,
-              };
-            } catch {
-              return {
-                ...st,
-                givenRating: null,
-              };
-            }
-          }) ?? []
-        );
-
-        console.log(ratings);
-
-        setStoreData(ratings);
-      } catch (err: unknown) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch stores";
-        setError(errorMessage);
-        console.error("Error fetching stores:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchStores();
   }, []);
+
+  const fetchStores = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const stores = await getAllstores();
+      // console.log(stores)
+      const ratings = await Promise.all(
+        stores.data?.map(async (st) => {
+          try {
+            const abc = await getRatingsForUser(user.userId, st.storeId);
+            console.log(abc);
+            return {
+              ...st,
+              givenRating: abc.data[0],
+            };
+          } catch {
+            return {
+              ...st,
+              givenRating: null,
+            };
+          }
+        }) ?? []
+      );
+
+      console.log(ratings);
+
+      setStoreData(ratings);
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch stores";
+      setError(errorMessage);
+      console.error("Error fetching stores:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle store sorting
   const handleStoreSort = (column: string) => {
@@ -259,7 +262,7 @@ export default function UserDashBoard() {
     setSelectedStore(store);
     if (isUpdate && store.givenRating) {
       setRatingData({
-        rating: store.givenRating,
+        rating: store.givenRating.rating,
       });
     } else {
       setRatingData({
@@ -276,7 +279,7 @@ export default function UserDashBoard() {
     setSelectedStore(store);
     if (isUpdate && store.givenRating) {
       setRatingData({
-        rating: store.givenRating,
+        rating: store.givenRating.rating,
       });
     } else {
       setRatingData({
@@ -292,21 +295,27 @@ export default function UserDashBoard() {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value } = e.target;
-    const response = await updateRating({
-      ratingId: selectedStore?.givenRating?.ratingId,
-      rating: ratingData.rating,
-    });
+    try {
+      const { name, value } = e.target;
+      const response = await updateRating({
+        ratingId: selectedStore?.givenRating?.ratingId,
+        rating: ratingData.rating,
+      });
 
-    if (name === "rating") {
-      setRatingData((prev) => ({ ...prev, [name]: parseInt(value) }));
-    } else {
-      setRatingData((prev) => ({ ...prev, [name]: value }));
-    }
+      if (name === "rating") {
+        setRatingData((prev) => ({ ...prev, [name]: parseInt(value) }));
+      } else {
+        setRatingData((prev) => ({ ...prev, [name]: value }));
+      }
 
-    // Clear error when user starts typing
-    if (ratingErrors[name as keyof RatingData]) {
-      setRatingErrors((prev) => ({ ...prev, [name]: undefined }));
+      // Clear error when user starts typing
+      if (ratingErrors[name as keyof RatingData]) {
+        setRatingErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
+      fetchStores();
+    } catch (err: any) {
+      console.error(err);
+      alert("Failde to update rating");
     }
   };
 
@@ -359,6 +368,7 @@ export default function UserDashBoard() {
 
         // Force re-render of the table
         setRatingUpdateCounter((prev) => prev + 1);
+        fetchStores();
 
         alert("Rating submitted successfully!");
       } catch (err) {
@@ -390,18 +400,18 @@ export default function UserDashBoard() {
       render: (value: number | null, row: StoreData) => (
         <div>
           <div className="font-medium mb-2">
-            {value ? `Rating: ${value}/5` : "No rating yet"}
+            {value?.rating ? `Rating: ${value.rating}/5` : "No rating yet"}
           </div>
-          {value ? (
+          {value?.rating ? (
             <button
-              onClick={() => handleRatingModalOpen(row, true)}
+              onClick={() => handleRatingUpdateModalOpen(row, true)}
               className="px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors"
             >
               Update Rating
             </button>
           ) : (
             <button
-              onClick={() => handleRatingUpdateModalOpen(row, true)}
+              onClick={() => handleRatingModalOpen(row, true)}
               className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
             >
               Add Rating
@@ -439,12 +449,23 @@ export default function UserDashBoard() {
               </h1>
               <p className="text-gray-600">Welcome back, {user.name}!</p>
             </div>
-            <button
-              onClick={() => setIsPasswordModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Update Password
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Update Password
+              </button>
+              <button
+                onClick={() => {
+                  setUser(null);
+                  navigate("/");
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -708,7 +729,12 @@ export default function UserDashBoard() {
                   id="rating"
                   name="rating"
                   value={ratingData.rating}
-                  onChange={(e) => setRatingData((prev) => ({ ...prev, rating: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setRatingData((prev) => ({
+                      ...prev,
+                      rating: Number(e.target.value),
+                    }))
+                  }
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     ratingErrors.rating ? "border-red-500" : "border-gray-300"
                   }`}
@@ -788,7 +814,12 @@ export default function UserDashBoard() {
                   id="rating"
                   name="rating"
                   value={ratingData.rating}
-                  onChange={(e) => setRatingData((prev) => ({ ...prev, rating: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setRatingData((prev) => ({
+                      ...prev,
+                      rating: Number(e.target.value),
+                    }))
+                  }
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     ratingErrors.rating ? "border-red-500" : "border-gray-300"
                   }`}

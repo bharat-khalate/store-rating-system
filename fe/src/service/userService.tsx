@@ -29,7 +29,7 @@ export async function login(user) {
 
  export async function getUserById(userId:number) {
     try{
-     const res=await api.get("/users/getUserById",userId);
+     const res=await api.get("/users/getUserById/"+userId);
      return res.data;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }catch(err:any){

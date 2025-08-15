@@ -15,7 +15,7 @@ const UserRouter = Router();
 UserRouter.post("/register", register);
 UserRouter.post("/login", authenticateUser);
 UserRouter.get("/getAllUsers", getAllUsers);
-UserRouter.get("/getUserById", getUserByUserId);
+UserRouter.get("/getUserById/:userId", getUserByUserId);
 UserRouter.get("/getAllStoreUsers", getAllStoreUsers);
 UserRouter.get("/getAllSystemUsers", getAllSystemUsers);
 UserRouter.put("/update", updatePassword);

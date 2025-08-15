@@ -27,7 +27,7 @@ export  async function submitRating(rating:{userId:number, storeId:number, ratin
 
 export  async function updateRating(rating:{ratingId:number, rating:number}){
     try {
-        const res = await api.get(`/ratings/${rating.ratingId}/ratings/${rating.rating}`);
+        const res = await api.put(`/ratings/${rating.ratingId}/ratings/${rating.rating}`);
         return res.data;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
