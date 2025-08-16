@@ -122,3 +122,4 @@ This document showcases the user interface of the project.
 - **Persisting User State in Session Storage**  
   Sync application context with session storage to retain user state across page reloads.
 
+ 
