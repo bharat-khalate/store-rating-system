@@ -9,6 +9,7 @@ import { getAllUsers, register } from "../service/userService";
 import { Role, useUser } from "../context/UserContext";
 import getAllRatings from "../service/ratingService";
 import { useNavigate } from "react-router-dom";
+import StoreForm from "../component/StoreForm"
 // import { getAllstores } from '../service/storeService'; // Commented out for development
 // import getAllRatings from '../service/ratingService'; // Commented out for development
 // import { getAllUsers } from '../service/userService'; // Commented out for development
@@ -80,159 +81,7 @@ export default function AdminDashBoard() {
       ),
     },
   ];
-
-  // Mock data for development
-  const mockUsers = [
-    {
-      userId: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: Role.SYSTEM_ADMINISTRATOR,
-    },
-    {
-      userId: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: Role.USER,
-    },
-    {
-      userId: 3,
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      role: Role.STORE_OWNER,
-    },
-    {
-      userId: 4,
-      name: "Alice Brown",
-      email: "alice@example.com",
-      role: Role.USER,
-    },
-    {
-      userId: 5,
-      name: "Charlie Wilson",
-      email: "charlie@example.com",
-      role: Role.SYSTEM_ADMINISTRATOR,
-    },
-    {
-      userId: 6,
-      name: "Diana Davis",
-      email: "diana@example.com",
-      role: Role.USER,
-    },
-    {
-      userId: 7,
-      name: "Edward Miller",
-      email: "edward@example.com",
-      role: Role.STORE_OWNER,
-    },
-    {
-      userId: 8,
-      name: "Fiona Garcia",
-      email: "fiona@example.com",
-      role: Role.USER,
-    },
-  ];
-
-  const mockStoreData = [
-    {
-      storeId: 1,
-      storeName: "Store 1",
-      address: "123 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 1,
-        name: "John Doe",
-        email: "john@example.com",
-        role: Role.SYSTEM_ADMINISTRATOR,
-      },
-    },
-    {
-      storeId: 2,
-      storeName: "Store 2",
-      address: "456 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 2,
-        name: "Jane Smith",
-        email: "jane@example.com",
-        role: Role.USER,
-      },
-    },
-    {
-      storeId: 3,
-      storeName: "Store 3",
-      address: "789 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 3,
-        name: "Bob Johnson",
-        email: "bob@example.com",
-        role: Role.STORE_OWNER,
-      },
-    },
-    {
-      storeId: 4,
-      storeName: "Store 4",
-      address: "101 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 4,
-        name: "Alice Brown",
-        email: "alice@example.com",
-        role: Role.USER,
-      },
-    },
-    {
-      storeId: 5,
-      storeName: "Store 5",
-      address: "111 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 5,
-        name: "Charlie Wilson",
-        email: "charlie@example.com",
-        role: Role.SYSTEM_ADMINISTRATOR,
-      },
-    },
-    {
-      storeId: 6,
-      storeName: "Store 6",
-      address: "121 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 6,
-        name: "Diana Davis",
-        email: "diana@example.com",
-        role: Role.USER,
-      },
-    },
-    {
-      storeId: 7,
-      storeName: "Store 7",
-      address: "131 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 7,
-        name: "Edward Miller",
-        email: "edward@example.com",
-        role: Role.STORE_OWNER,
-      },
-    },
-    {
-      storeId: 8,
-      storeName: "Store 8",
-      address: "141 Main St",
-      overallRating: 4.5,
-      owner: {
-        userId: 8,
-        name: "Fiona Garcia",
-        email: "fiona@example.com",
-        role: Role.USER,
-      },
-    },
-  ];
-
-  // Fetch users from API (commented out for development)
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -544,11 +393,11 @@ export default function AdminDashBoard() {
       />
 
       {/* Store Form Modal */}
-      {/* <StoreForm
+      <StoreForm
         isOpen={isStoreFormOpen}
         onClose={() => setIsStoreFormOpen(false)}
         onSubmit={handleAddStore}
-      /> */}
+      />
     </div>
   );
 }

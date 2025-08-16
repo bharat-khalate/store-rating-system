@@ -198,7 +198,6 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit }) => {
              >
                <option value={Role.USER}>User</option>
                <option value={Role.SYSTEM_ADMINISTRATOR}>System Administrator</option>
-               <option value={Role.STORE_OWNER}>Store Owner</option>
              </select>
             {errors.role && (
               <p className="text-red-500 text-sm mt-1">{errors.role}</p>

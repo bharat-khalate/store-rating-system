@@ -73,9 +73,9 @@ export default function Login() {
     }
 
     if (!loginData.password) {
-      newErrors.address = "Address is required";
+      newErrors.password = "Password is required";
     } else if (!validatePassword(loginData.password)) {
-      newErrors.password = "password must be at least 5 characters long";
+      newErrors.password = "Password must be at least 6 characters long";
     }
 
     setErrors(newErrors);
@@ -123,8 +123,9 @@ export default function Login() {
      const user=await login(loginData);
       
       ctx?.setUser(user.data[0]);
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: any) {
+      console.error("Login failed:", error.message);
+      window.alert("Login Failed: " + error.message)
     } finally {
       setIsLoading(false);
     }
@@ -142,8 +143,10 @@ export default function Login() {
 
       
       ctx?.setUser(user.data[0]);
-    } catch (error) {
-      console.error("Signup failed:", error);
+    } catch (error: any) {
+      console.error("Signup failed:", error.message);
+      window.alert("Signup failed: " + error.message);
+
     } finally {
       setIsLoading(false);
     }
@@ -234,22 +237,22 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="login-address" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <input
-                  id="login-address"
+                  id="login-password"
                   name="password"
-                  type="text"
-                  value={loginData.passowrd}
+                  type="password"
+                  value={loginData.password}
                   onChange={(e) => handleInputChange(e, "login")}
                   className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.address ? "border-red-300" : "border-gray-300"
+                    errors.password ? "border-red-300" : "border-gray-300"
                   }`}
-                  placeholder="Enter your address"
+                  placeholder="Enter your password"
                 />
-                {errors.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
                 )}
               </div>
 

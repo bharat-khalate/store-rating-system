@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useUser } from "../context/UserContext";
-import StoreTable from "../component/StoreTable";
 import { Role } from "../context/UserContext";
 import { getAllstores } from "../service/storeService";
 import { updatePassword } from "../service/userService";
@@ -10,6 +9,10 @@ import {
   updateRating,
 } from "../service/ratingService";
 import { useNavigate } from "react-router-dom";
+import UserInfoCard from "../component/UserInfoCard";
+import StoresSection from "../component/StoresSection";
+import PasswordUpdateModal from "../component/PasswordUpdateModal";
+import RatingModal from "../component/RatingModal";
 
 interface StoreData {
   storeId: number | null;
@@ -22,7 +25,7 @@ interface StoreData {
     email: string;
     role: Role;
   };
-  givenRating: any;
+  givenRating: { rating: number; ratingId: number } | null;
 }
 
 interface PasswordUpdateData {
@@ -36,77 +39,30 @@ interface RatingData {
 }
 
 export default function UserDashBoard() {
-   const { user, setUser } = useUser();
+  const userContext = useUser();
+  const user = userContext?.user;
+  const setUser = userContext?.setUser;
   const navigate = useNavigate();
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-  const [isPasswordModalOpen, setIsPasswordModalOpen] =
-    useState<boolean>(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
   const [passwordData, setPasswordData] = useState<PasswordUpdateData>({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-  const [passwordErrors, setPasswordErrors] = useState<
-    Partial<PasswordUpdateData>
-  >({});
+  const [passwordErrors, setPasswordErrors] = useState<Partial<PasswordUpdateData>>({});
   const [storeSortColumn, setStoreSortColumn] = useState<string>("");
-  const [storeSortDirection, setStoreSortDirection] = useState<"asc" | "desc">(
-    "asc"
-  );
+  const [storeSortDirection, setStoreSortDirection] = useState<"asc" | "desc">("asc");
   const [isRatingModalOpen, setIsRatingModalOpen] = useState<boolean>(false);
-  const [ratingUpdateModalOpen, setIsRatingUpdateModalOpen] =
-    useState<boolean>(false);
+  const [ratingUpdateModalOpen, setIsRatingUpdateModalOpen] = useState<boolean>(false);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [ratingData, setRatingData] = useState<RatingData>({
     rating: 5,
   });
   const [ratingErrors, setRatingErrors] = useState<Partial<RatingData>>({});
   const [ratingUpdateCounter, setRatingUpdateCounter] = useState<number>(0);
-
-  // Mock store data for development
-  const mockStoreData: StoreData[] = [
-    {
-      storeId: 1,
-      storeName: "Tech Store",
-      address: "123 Main St, City",
-      overallRating: 4.5,
-      owner: {
-        userId: 1,
-        name: "John Doe",
-        email: "john@example.com",
-        role: Role.STORE_OWNER,
-      },
-      givenRating: null,
-    },
-    {
-      storeId: 2,
-      storeName: "Book Store",
-      address: "456 Oak Ave, Town",
-      overallRating: 4.2,
-      owner: {
-        userId: 2,
-        name: "Jane Smith",
-        email: "jane@example.com",
-        role: Role.STORE_OWNER,
-      },
-      givenRating: null,
-    },
-    {
-      storeId: 3,
-      storeName: "Food Store",
-      address: "789 Pine Rd, Village",
-      overallRating: 4.8,
-      owner: {
-        userId: 3,
-        name: "Bob Johnson",
-        email: "bob@example.com",
-        role: Role.STORE_OWNER,
-      },
-      givenRating: null,
-    },
-  ];
 
   // Fetch stores data
   useEffect(() => {
@@ -119,31 +75,28 @@ export default function UserDashBoard() {
       setError("");
 
       const stores = await getAllstores();
-      // console.log(stores)
-      const ratings = await Promise.all(
-        stores.data?.map(async (st) => {
-          try {
-            const abc = await getRatingsForUser(user.userId, st.storeId);
-            console.log(abc);
-            return {
-              ...st,
-              givenRating: abc.data[0],
-            };
-          } catch {
-            return {
-              ...st,
-              givenRating: null,
-            };
-          }
-        }) ?? []
-      );
+              const ratings = await Promise.all(
+          stores.data?.map(async (st: StoreData) => {
+            try {
+              const abc = await getRatingsForUser(user?.userId, st.storeId);
+              console.log(abc);
+              return {
+                ...st,
+                givenRating: abc.data[0],
+              };
+            } catch {
+              return {
+                ...st,
+                givenRating: null,
+              };
+            }
+          }) ?? []
+        );
 
       console.log(ratings);
-
       setStoreData(ratings);
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch stores";
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch stores";
       setError(errorMessage);
       console.error("Error fetching stores:", err);
     } finally {
@@ -218,12 +171,11 @@ export default function UserDashBoard() {
     if (validatePasswordForm()) {
       try {
         const data = {
-          userId: user.userId,
+          userId: user?.userId,
           oldPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,
         };
-        const res = await updatePassword(data);
-        // console.log('Password update data:', passwordData);
+        await updatePassword(data);
 
         // Reset form
         setPasswordData({
@@ -234,7 +186,6 @@ export default function UserDashBoard() {
         setPasswordErrors({});
         setIsPasswordModalOpen(false);
 
-        // Show success message (you can add a toast notification here)
         alert("Password updated successfully!");
       } catch (err) {
         console.error("Error updating password:", err);
@@ -255,10 +206,7 @@ export default function UserDashBoard() {
   };
 
   // Handle rating modal open
-  const handleRatingModalOpen = (
-    store: StoreData,
-    isUpdate: boolean = false
-  ) => {
+  const handleRatingModalOpen = (store: StoreData, isUpdate: boolean = false) => {
     setSelectedStore(store);
     if (isUpdate && store.givenRating) {
       setRatingData({
@@ -272,10 +220,7 @@ export default function UserDashBoard() {
     setIsRatingModalOpen(true);
   };
 
-  const handleRatingUpdateModalOpen = (
-    store: StoreData,
-    isUpdate: boolean = false
-  ) => {
+  const handleRatingUpdateModalOpen = (store: StoreData, isUpdate: boolean = false) => {
     setSelectedStore(store);
     if (isUpdate && store.givenRating) {
       setRatingData({
@@ -290,17 +235,13 @@ export default function UserDashBoard() {
   };
 
   // Handle rating form changes
-  const handleRatingChange = async (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
+  const handleRatingChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     try {
       const { name, value } = e.target;
-      const response = await updateRating({
-        ratingId: selectedStore?.givenRating?.ratingId,
-        rating: ratingData.rating,
-      });
+              await updateRating({
+          ratingId: selectedStore?.givenRating?.ratingId,
+          rating: ratingData.rating,
+        });
 
       if (name === "rating") {
         setRatingData((prev) => ({ ...prev, [name]: parseInt(value) }));
@@ -315,7 +256,7 @@ export default function UserDashBoard() {
       fetchStores();
     } catch (err: any) {
       console.error(err);
-      alert("Failde to update rating");
+      alert("Failed to update rating");
     }
   };
 
@@ -337,14 +278,14 @@ export default function UserDashBoard() {
 
     if (validateRatingForm() && selectedStore) {
       try {
-        const response = await submitRating({
-          userId: user.userId,
+        await submitRating({
+          userId: user?.userId,
           storeId: selectedStore.storeId,
           rating: ratingData.rating,
         });
 
         console.log("Rating submitted:", {
-          userId: user.userId,
+          userId: user?.userId,
           storeId: selectedStore.storeId,
           rating: ratingData.rating,
         });
@@ -377,50 +318,6 @@ export default function UserDashBoard() {
       }
     }
   };
-
-  // Store table columns configuration
-  const storeColumns = [
-    { key: "storeId", label: "Store ID" },
-    { key: "storeName", label: "Store Name" },
-    { key: "address", label: "Address" },
-    { key: "overAllRating", label: "Rating" },
-    {
-      key: "owner",
-      label: "Owner",
-      render: (value: { name: string; email: string }) => (
-        <div>
-          <div className="font-medium">{value.name}</div>
-          <div className="text-sm text-gray-500">{value.email}</div>
-        </div>
-      ),
-    },
-    {
-      key: "givenRating",
-      label: "Your Rating",
-      render: (value: number | null, row: StoreData) => (
-        <div>
-          <div className="font-medium mb-2">
-            {value?.rating ? `Rating: ${value.rating}/5` : "No rating yet"}
-          </div>
-          {value?.rating ? (
-            <button
-              onClick={() => handleRatingUpdateModalOpen(row, true)}
-              className="px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors"
-            >
-              Update Rating
-            </button>
-          ) : (
-            <button
-              onClick={() => handleRatingModalOpen(row, true)}
-              className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-            >
-              Add Rating
-            </button>
-          )}
-        </div>
-      ),
-    },
-  ];
 
   if (!user) {
     return (
@@ -458,7 +355,7 @@ export default function UserDashBoard() {
               </button>
               <button
                 onClick={() => {
-                  setUser(null);
+                  setUser?.(null);
                   navigate("/");
                 }}
                 className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-700 transition-colors"
@@ -469,395 +366,62 @@ export default function UserDashBoard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                User Information
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  <p className="text-gray-900">{user.name}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <p className="text-gray-900">
-                    {user.email || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Role
-                  </label>
-                  <p className="text-gray-900">
-                    {user.role === Role.USER
-                      ? "User"
-                      : user.role === Role.SYSTEM_ADMINISTRATOR
-                      ? "System Administrator"
-                      : user.role === Role.STORE_OWNER
-                      ? "Store Owner"
-                      : user.role}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Address
-                  </label>
-                  <p className="text-gray-900">
-                    {user.address || "Not provided"}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <UserInfoCard user={user} />
           </div>
         </div>
       </div>
 
-      {/* Stores Table Section */}
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Available Stores</h2>
-          <p className="text-gray-600 mt-1">Browse all stores in the system</p>
-        </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading stores...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-600 font-medium">Error: {error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Stores Table */}
-        {!loading && !error && (
-          <StoreTable
-            key={`stores-${ratingUpdateCounter}`}
-            columns={storeColumns}
-            data={processedStoreData}
-            title=""
-            sortColumn={storeSortColumn}
-            sortDirection={storeSortDirection}
-            onSort={handleStoreSort}
-          />
-        )}
-      </div>
+      {/* Stores Section */}
+      <StoresSection
+        loading={loading}
+        error={error}
+        processedStoreData={processedStoreData}
+        storeSortColumn={storeSortColumn}
+        storeSortDirection={storeSortDirection}
+        onStoreSort={handleStoreSort}
+        ratingUpdateCounter={ratingUpdateCounter}
+        onRatingModalOpen={handleRatingModalOpen}
+        onRatingUpdateModalOpen={handleRatingUpdateModalOpen}
+      />
 
       {/* Password Update Modal */}
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Update Password
-              </h2>
-              <button
-                onClick={() => setIsPasswordModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handlePasswordUpdate} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="currentPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Current Password *
-                </label>
-                <input
-                  type="password"
-                  id="currentPassword"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    passwordErrors.currentPassword
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter current password"
-                />
-                {passwordErrors.currentPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {passwordErrors.currentPassword}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="newPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  New Password *
-                </label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    passwordErrors.newPassword
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter new password"
-                />
-                {passwordErrors.newPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {passwordErrors.newPassword}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Confirm New Password *
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    passwordErrors.confirmPassword
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Confirm new password"
-                />
-                {passwordErrors.confirmPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {passwordErrors.confirmPassword}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsPasswordModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Update Password
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <PasswordUpdateModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        passwordData={passwordData}
+        passwordErrors={passwordErrors}
+        onPasswordChange={handlePasswordChange}
+        onSubmit={handlePasswordUpdate}
+      />
 
       {/* Rating Modal */}
-      {isRatingModalOpen && selectedStore && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">
-                {selectedStore.givenRating ? "Update Rating" : "Add Rating"} -{" "}
-                {selectedStore.storeName}
-              </h2>
-              <button
-                onClick={() => setIsRatingModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+      <RatingModal
+        isOpen={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        selectedStore={selectedStore}
+        ratingData={ratingData}
+        ratingErrors={ratingErrors}
+        onRatingChange={(e) =>
+          setRatingData((prev) => ({
+            ...prev,
+            rating: Number(e.target.value),
+          }))
+        }
+        onSubmit={handleRatingSubmit}
+        isUpdate={false}
+      />
 
-            <form onSubmit={handleRatingSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="rating"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Rating *
-                </label>
-                <select
-                  id="rating"
-                  name="rating"
-                  value={ratingData.rating}
-                  onChange={(e) =>
-                    setRatingData((prev) => ({
-                      ...prev,
-                      rating: Number(e.target.value),
-                    }))
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    ratingErrors.rating ? "border-red-500" : "border-gray-300"
-                  }`}
-                >
-                  <option value={1}>1 - Poor</option>
-                  <option value={2}>2 - Fair</option>
-                  <option value={3}>3 - Good</option>
-                  <option value={4}>4 - Very Good</option>
-                  <option value={5}>5 - Excellent</option>
-                </select>
-                {ratingErrors.rating && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {ratingErrors.rating}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsRatingModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  {selectedStore.givenRating
-                    ? "Update Rating"
-                    : "Submit Rating"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {ratingUpdateModalOpen && selectedStore && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">
-                {selectedStore.givenRating ? "Update Rating" : "Add Rating"} -{" "}
-                {selectedStore.storeName}
-              </h2>
-              <button
-                onClick={() => setIsRatingUpdateModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleRatingChange} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="rating"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Rating *
-                </label>
-                <select
-                  id="rating"
-                  name="rating"
-                  value={ratingData.rating}
-                  onChange={(e) =>
-                    setRatingData((prev) => ({
-                      ...prev,
-                      rating: Number(e.target.value),
-                    }))
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    ratingErrors.rating ? "border-red-500" : "border-gray-300"
-                  }`}
-                >
-                  <option value={1}>1 - Poor</option>
-                  <option value={2}>2 - Fair</option>
-                  <option value={3}>3 - Good</option>
-                  <option value={4}>4 - Very Good</option>
-                  <option value={5}>5 - Excellent</option>
-                </select>
-                {ratingErrors.rating && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {ratingErrors.rating}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsRatingModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  {selectedStore.givenRating
-                    ? "Update Rating"
-                    : "Submit Rating"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Rating Update Modal */}
+      <RatingModal
+        isOpen={ratingUpdateModalOpen}
+        onClose={() => setIsRatingUpdateModalOpen(false)}
+        selectedStore={selectedStore}
+        ratingData={ratingData}
+        ratingErrors={ratingErrors}
+        onRatingChange={handleRatingChange}
+        onSubmit={handleRatingChange}
+        isUpdate={true}
+      />
     </div>
   );
 }
